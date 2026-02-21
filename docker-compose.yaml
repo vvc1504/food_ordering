@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  food-api:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - LOG_LEVEL=info
+    volumes:
+      # Mount the requirements folder to avoid copying large files into the image if preferred,
+      # but for a standalone assignment, copying it into the image is easier for the reviewer.
+      - ./requirements:/app/requirements
