@@ -28,9 +28,7 @@ func main() {
 
 	log.Info().Msg("Starting Food Ordering API server...")
 
-	// 1. Initialize Repository
-
-	// 2. Initialize Coupon Validator (Sequential Streaming Indexing)
+	// 1. Initialize Coupon Validator (Sequential Streaming Indexing)
 	couponFiles := []string{
 		filepath.Join(*couponDir, "couponbase1.gz"),
 		filepath.Join(*couponDir, "couponbase2.gz"),
@@ -44,7 +42,7 @@ func main() {
 	}
 	log.Info().Msg("Coupon indexing complete.")
 
-	// 3. Initialize Managers
+	// 2. Initialize Managers
 	productMgr := impl.NewProductManagerRef()
 	prdInitStChan := <-productMgr.(impl.ProductManagerInternal).ProductManagerInit()
 	_ = prdInitStChan
@@ -53,7 +51,7 @@ func main() {
 	initStChan := <-orderMgr.(impl.OrderManagerInternal).OrderManagerInit(productMgr, couponValidator)
 	_ = initStChan
 
-	// 4. Initialize Products from "Config" (Seed data)
+	// 3. Initialize Products from "Config" (Seed data)
 	productInits := []spec.ProductInit{
 		{ID: spec.ProductID("1"), Name: "Chicken Waffle", Price: 12.99, Category: "Waffle"},
 		{ID: spec.ProductID("2"), Name: "Beef Burger", Price: 15.50, Category: "Burger"},
@@ -74,18 +72,18 @@ func main() {
 	}
 	log.Info().Msg("Products aggregate initialized.")
 
-	// 5. Initialize Handlers
+	// 4. Initialize Handlers
 	h := handlers.NewHandler(productMgr, orderMgr)
 
 	// 5. Setup Router and Middleware
 	mux := http.NewServeMux()
 
 	// Public routes
-	mux.HandleFunc("/product", middleware.Logger(h.ListProducts))
-	mux.HandleFunc("/product/", middleware.Logger(h.GetProduct))
+	mux.HandleFunc("/product", middleware.CORS(middleware.Logger(h.ListProducts)))
+	mux.HandleFunc("/product/", middleware.CORS(middleware.Logger(h.GetProduct)))
 
 	// Protected routes
-	mux.HandleFunc("/order", middleware.Logger(middleware.APIKeyAuth("apitest", h.PlaceOrder)))
+	mux.HandleFunc("/order", middleware.CORS(middleware.Logger(middleware.APIKeyAuth("apitest", h.PlaceOrder))))
 
 	// Start server
 	addr := fmt.Sprintf(":%s", *port)

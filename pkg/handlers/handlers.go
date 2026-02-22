@@ -58,7 +58,7 @@ func (h *Handler) GetProduct(w http.ResponseWriter, r *http.Request) {
 	product := <-productChan
 	st := <-stChan
 
-	if st.Code() != 0 {
+	if st != nil && st.Code() != 0 {
 		if st.Code() == 1 { // ProductNotFound
 			http.Error(w, "Product not found", http.StatusNotFound)
 		} else {

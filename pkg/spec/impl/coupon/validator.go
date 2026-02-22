@@ -7,6 +7,7 @@ import (
 	"os"
 	"sync"
 
+	"github.com/rs/zerolog/log"
 	"github.com/vvc1504/food_ordering/pkg/spec"
 )
 
@@ -51,6 +52,7 @@ func (v *validator) initialize(filePaths []string) error {
 	seenInFile2 := make(map[string]struct{})
 
 	for i, path := range filePaths {
+		log.Info().Int("file_index", i+1).Int("total_files", len(filePaths)).Str("path", path).Msg("Indexing coupon base file")
 		err := func() error {
 			f, err := os.Open(path)
 			if err != nil {

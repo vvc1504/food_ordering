@@ -2,6 +2,7 @@ package impl
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/vvc1504/food_ordering/cmd/utils"
 	"github.com/vvc1504/food_ordering/pkg/spec"
@@ -9,6 +10,7 @@ import (
 
 // orderManager implements the spec.OrderManager interface.
 type OrderManager struct {
+	mu                 sync.RWMutex
 	ProductManagerRef_ spec.ProductManager
 	Orders             map[string]spec.Order
 	OrderKeys          []string
@@ -30,14 +32,18 @@ func (p *OrderManager) ProductManager() (Ref <-chan spec.ProductManager) {
 }
 
 func (p *OrderManager) HasOrderKey(ID string) (Has <-chan bool) {
-	_, ok := p.Orders[ID]
 	return utils.Call(func() bool {
+		p.mu.RLock()
+		defer p.mu.RUnlock()
+		_, ok := p.Orders[ID]
 		return ok
 	})
 }
 
 func (m *OrderManager) OrderManagerInit(ProductManagerRef spec.ProductManager, CV spec.CouponValidator) (St <-chan spec.ErrorOrderManagerStatus) {
 	return utils.Call(func() spec.ErrorOrderManagerStatus {
+		m.mu.Lock()
+		defer m.mu.Unlock()
 		m.CouponValidator = CV
 		m.ProductManagerRef_ = ProductManagerRef
 		m.Orders = make(map[string]spec.Order, 0)
@@ -48,43 +54,57 @@ func (m *OrderManager) OrderManagerInit(ProductManagerRef spec.ProductManager, C
 
 // PlaceOrder implements [spec.OrderManager].
 func (m *OrderManager) PlaceOrder(Reqs []spec.OrderReq) (Order <-chan []spec.Order, St <-chan []spec.ErrorOrderManagerStatus) {
-	created := make([]spec.Order, 0, len(Reqs))
-	statuses := make([]spec.ErrorOrderManagerStatus, 0, len(Reqs))
-	pm := <-m.ProductManager()
-	for _, req := range Reqs {
-		if len(req.Items) == 0 {
-			statuses = append(statuses, (spec.ErrorOrderManagerStatus)(spec.NewStatus(spec.StatusCode(spec.OrderManagerInvalidInput), "order must contain at least one item")))
-			continue
-		}
-		if req.CouponCode != "" {
-			valid, err := m.CouponValidator.Validate(req.CouponCode)
-			if err != nil || !valid {
-				statuses = append(statuses, (spec.ErrorOrderManagerStatus)(spec.NewStatus(spec.StatusCode(spec.OrderManagerInvalidCoupon), "invalid coupon code")))
-				continue
-			}
-		}
-		orderID := spec.OrderID(utils.GenerateID())
-		order := &spec.OrderObj{
-			ID_:    orderID,
-			Items_: req.Items,
-		}
-		m.Orders[string(orderID)] = order
-		m.OrderKeys = append(m.OrderKeys, string(orderID))
-		created = append(created, order)
-		statuses = append(statuses, nil)
-
-		for _, item := range req.Items {
-			prdChan, prdStChan := pm.GetProduct(string(item.ProductID))
-			prd := <-prdChan
-			prdSt := <-prdStChan
-			if prdSt != nil && prdSt.Code() != 0 {
-				statuses = append(statuses, (spec.ErrorOrderManagerStatus)(spec.NewStatus(spec.StatusCode(spec.OrderManagerProductMissing), fmt.Sprintf("product %s not found", item.ProductID))))
-				continue
-			}
-			order.Products_ = append(order.Products_, prd)
-		}
-	}
 	return utils.Call2(func() ([]spec.Order, []spec.ErrorOrderManagerStatus) {
+		m.mu.Lock()
+		defer m.mu.Unlock()
+
+		created := make([]spec.Order, 0, len(Reqs))
+		statuses := make([]spec.ErrorOrderManagerStatus, 0, len(Reqs))
+		pm := <-m.ProductManager()
+
+		for _, req := range Reqs {
+			if len(req.Items) == 0 {
+				statuses = append(statuses, (spec.ErrorOrderManagerStatus)(spec.NewStatus(spec.StatusCode(spec.OrderManagerInvalidInput), "order must contain at least one item")))
+				continue
+			}
+			if req.CouponCode != "" {
+				valid, err := m.CouponValidator.Validate(req.CouponCode)
+				if err != nil || !valid {
+					statuses = append(statuses, (spec.ErrorOrderManagerStatus)(spec.NewStatus(spec.StatusCode(spec.OrderManagerInvalidCoupon), "invalid coupon code")))
+					continue
+				}
+			}
+
+			// Validate all products exist first
+			orderProducts := make([]spec.Product, 0, len(req.Items))
+			validOrder := true
+			for _, item := range req.Items {
+				prdChan, prdStChan := pm.GetProduct(string(item.ProductID))
+				prd := <-prdChan
+				prdSt := <-prdStChan
+				if prdSt != nil && prdSt.Code() != 0 {
+					statuses = append(statuses, (spec.ErrorOrderManagerStatus)(spec.NewStatus(spec.StatusCode(spec.OrderManagerProductMissing), fmt.Sprintf("product %s not found", item.ProductID))))
+					validOrder = false
+					break
+				}
+				orderProducts = append(orderProducts, prd)
+			}
+
+			if !validOrder {
+				continue
+			}
+
+			orderID := spec.OrderID(utils.GenerateID())
+			order := &spec.OrderObj{
+				ID_:       orderID,
+				Items_:    req.Items,
+				Products_: orderProducts,
+			}
+			m.Orders[string(orderID)] = order
+			m.OrderKeys = append(m.OrderKeys, string(orderID))
+			created = append(created, order)
+			statuses = append(statuses, nil)
+		}
 		return created, statuses
 	})
 }
