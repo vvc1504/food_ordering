@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"path/filepath"
+	"strings"
 	"sync/atomic"
 
 	"github.com/rs/zerolog"
@@ -24,7 +24,7 @@ func main() {
 
 	// Flags
 	port := flag.String("port", "8080", "Server port")
-	couponDir := flag.String("coupon-dir", "requirements", "Directory containing couponbaseX.gz files")
+	couponFilesStr := flag.String("coupon-files", "requirements/couponbase1.gz,requirements/couponbase2.gz,requirements/couponbase3.gz", "Comma-separated list of coupon gzip files")
 	flag.Parse()
 
 	log.Info().Msg("Starting Food Ordering API server...")
@@ -75,11 +75,7 @@ func main() {
 	// --- Heavy Initialization Phase ---
 
 	// 2. Initialize Coupon Validator (Sequential Streaming Indexing)
-	couponFiles := []string{
-		filepath.Join(*couponDir, "couponbase1.gz"),
-		filepath.Join(*couponDir, "couponbase2.gz"),
-		filepath.Join(*couponDir, "couponbase3.gz"),
-	}
+	couponFiles := strings.Split(*couponFilesStr, ",")
 
 	log.Info().Msg("Indexing coupons (this may take a moment)...")
 	couponValidator, err := coupon.NewValidator(couponFiles)
