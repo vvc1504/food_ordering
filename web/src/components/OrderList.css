@@ -1,0 +1,102 @@
+.order-list-container {
+    margin-top: var(--space-xl);
+    padding-top: var(--space-xl);
+    border-top: 2px solid var(--clr-rose-100);
+}
+
+.order-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-md);
+}
+
+.order-list-header h2 {
+    font-size: var(--fs-600);
+    color: var(--clr-rose-900);
+}
+
+.refresh-btn {
+    background: white;
+    border: 1px solid var(--clr-rose-300);
+    color: var(--clr-rose-900);
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: var(--fw-600);
+    transition: all var(--transition-fast);
+}
+
+.refresh-btn:hover {
+    border-color: var(--clr-rose-900);
+    background: var(--clr-rose-50);
+}
+
+.orders-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--space-md);
+}
+
+.order-history-card {
+    background: white;
+    border-radius: 12px;
+    padding: var(--space-md);
+    box-shadow: 0 2px 4px rgb(0 0 0 / 0.05);
+    border: 1px solid var(--clr-rose-100);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.order-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px dashed var(--clr-rose-100);
+    padding-bottom: 8px;
+}
+
+.order-id-badge {
+    background: var(--clr-rose-100);
+    color: var(--clr-rose-900);
+    font-size: var(--fs-200);
+    font-weight: var(--fw-700);
+    padding: 4px 8px;
+    border-radius: 6px;
+}
+
+.order-total-lbl {
+    font-weight: var(--fw-700);
+    color: var(--clr-primary-red);
+}
+
+.order-items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.order-item-history {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: var(--fs-300);
+}
+
+.qty-badge {
+    color: var(--clr-primary-red);
+    font-weight: var(--fw-700);
+    min-width: 24px;
+}
+
+.no-orders-msg,
+.order-list-loading,
+.order-list-error {
+    color: var(--clr-rose-400);
+    font-style: italic;
+    padding: var(--space-md) 0;
+}
+
+.order-list-error {
+    color: var(--clr-primary-red);
+}

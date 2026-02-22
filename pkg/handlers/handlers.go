@@ -106,3 +106,23 @@ func (h *Handler) PlaceOrder(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"orderId": string(orders[0].ID())})
 }
+func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	ordersChan, stsChan := h.orderMgr.GetOrderList()
+	orders := <-ordersChan
+	sts := <-stsChan
+
+	for _, st := range sts {
+		if st != nil && st.Code() != 0 {
+			http.Error(w, st.Message(), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(orders)
+}

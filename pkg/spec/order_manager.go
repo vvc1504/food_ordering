@@ -46,4 +46,5 @@ type ErrorOrderManagerStatus Status
 
 type OrderManager interface {
 	PlaceOrder(Reqs []OrderReq) (Order <-chan []Order, St <-chan []ErrorOrderManagerStatus)
+	GetOrderList() (Orders <-chan []Order, St <-chan []ErrorOrderManagerStatus)
 }

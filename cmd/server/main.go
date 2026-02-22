@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sync/atomic"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -28,7 +29,52 @@ func main() {
 
 	log.Info().Msg("Starting Food Ordering API server...")
 
-	// 1. Initialize Coupon Validator (Sequential Streaming Indexing)
+	// We will use an atomic flag to mark when the API is ready
+	var isReady atomic.Bool
+	isReady.Store(false)
+
+	// API Wrapper to return 503 when not ready
+	apiWrapper := func(next http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			if !isReady.Load() {
+				http.Error(w, "Server is initializing coupons, please wait...", http.StatusServiceUnavailable)
+				return
+			}
+			next(w, r)
+		}
+	}
+
+	// Setup Router and Middleware early so frontend can be served
+	mux := http.NewServeMux()
+
+	// 1. Initialize Handlers early but with nil dependencies (they won't be called until isReady=true)
+	// Actually, we can wrap the mux definition to use a dynamic handler or just defer handler execution
+	var h *handlers.Handler
+
+	// Public routes
+	mux.HandleFunc("/product", middleware.CORS(middleware.Logger(apiWrapper(func(w http.ResponseWriter, r *http.Request) { h.ListProducts(w, r) }))))
+	mux.HandleFunc("/product/", middleware.CORS(middleware.Logger(apiWrapper(func(w http.ResponseWriter, r *http.Request) { h.GetProduct(w, r) }))))
+	mux.HandleFunc("/orders", middleware.CORS(middleware.Logger(apiWrapper(func(w http.ResponseWriter, r *http.Request) { h.ListOrders(w, r) }))))
+
+	// Protected routes
+	mux.HandleFunc("/order", middleware.CORS(middleware.Logger(middleware.APIKeyAuth("apitest", apiWrapper(func(w http.ResponseWriter, r *http.Request) { h.PlaceOrder(w, r) })))))
+
+	// Serve Frontend Static Files
+	mux.Handle("/", http.FileServer(http.Dir("web/dist")))
+
+	// Start server in the background
+	addr := fmt.Sprintf(":%s", *port)
+	log.Info().Msgf("Server listening on %s", addr)
+
+	go func() {
+		if err := http.ListenAndServe(addr, mux); err != nil {
+			log.Fatal().Err(err).Msg("Server failed")
+		}
+	}()
+
+	// --- Heavy Initialization Phase ---
+
+	// 2. Initialize Coupon Validator (Sequential Streaming Indexing)
 	couponFiles := []string{
 		filepath.Join(*couponDir, "couponbase1.gz"),
 		filepath.Join(*couponDir, "couponbase2.gz"),
@@ -42,7 +88,7 @@ func main() {
 	}
 	log.Info().Msg("Coupon indexing complete.")
 
-	// 2. Initialize Managers
+	// 3. Initialize Managers
 	productMgr := impl.NewProductManagerRef()
 	prdInitStChan := <-productMgr.(impl.ProductManagerInternal).ProductManagerInit()
 	_ = prdInitStChan
@@ -51,7 +97,7 @@ func main() {
 	initStChan := <-orderMgr.(impl.OrderManagerInternal).OrderManagerInit(productMgr, couponValidator)
 	_ = initStChan
 
-	// 3. Initialize Products from "Config" (Seed data)
+	// 4. Initialize Products from "Config" (Seed data)
 	productInits := []spec.ProductInit{
 		{ID: spec.ProductID("1"), Name: "Chicken Waffle", Price: 12.99, Category: "Waffle"},
 		{ID: spec.ProductID("2"), Name: "Beef Burger", Price: 15.50, Category: "Burger"},
@@ -72,24 +118,12 @@ func main() {
 	}
 	log.Info().Msg("Products aggregate initialized.")
 
-	// 4. Initialize Handlers
-	h := handlers.NewHandler(productMgr, orderMgr)
+	// 5. Assign dependencies and mark AS READY
+	h = handlers.NewHandler(productMgr, orderMgr)
+	isReady.Store(true)
 
-	// 5. Setup Router and Middleware
-	mux := http.NewServeMux()
+	log.Info().Msg("Server is fully ready. API endpoints are now accepting traffic.")
 
-	// Public routes
-	mux.HandleFunc("/product", middleware.CORS(middleware.Logger(h.ListProducts)))
-	mux.HandleFunc("/product/", middleware.CORS(middleware.Logger(h.GetProduct)))
-
-	// Protected routes
-	mux.HandleFunc("/order", middleware.CORS(middleware.Logger(middleware.APIKeyAuth("apitest", h.PlaceOrder))))
-
-	// Start server
-	addr := fmt.Sprintf(":%s", *port)
-	log.Info().Msgf("Server listening on %s", addr)
-
-	if err := http.ListenAndServe(addr, mux); err != nil {
-		log.Fatal().Err(err).Msg("Server failed")
-	}
+	// Block main thread to keep server running
+	select {}
 }

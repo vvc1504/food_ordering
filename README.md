@@ -73,8 +73,9 @@ Here is an example workflow (you can use it as a reference or use your own workf
 6. Deploy your app anywhere securely. You may use AWS, Vercel, Deno Deploy, Surge, CloudFlare Pages or some other web app deployment services.
 7. Additionally configure your repository to automatically publish your app on new commit push (CI).
 
-> 💡 Replace or Modify this README to explain your solution and how to run and test it.
-
+> 💡 **Demo Build Instructions**:
+> A complete, standalone Full Stack executable has been created. To run the bundled React and Go application, simply run the `demo.bat` file or execute the compiled `food_ordering.exe` from the root directory.
+> The server will automatically host the static frontend files on `http://localhost:8080/`.
 _By following these guidelines, you should be able to build a functional and visually appealing mini e-commerce shopping portal that meets the minimum requirements and bonus goals. Good luck! 🚀_
 
 **Resources**

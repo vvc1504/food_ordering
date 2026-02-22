@@ -1,0 +1,105 @@
+.product-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.product-image-container {
+    position: relative;
+    border-radius: 8px;
+    overflow: visible;
+    margin-bottom: 20px;
+}
+
+.product-image {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    transition: border-color var(--transition-fast);
+}
+
+.product-card.active .product-image {
+    border-color: var(--clr-primary-red);
+}
+
+.add-to-cart-btn {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translate(-50%, 50%);
+    background: white;
+    border: 1px solid var(--clr-rose-400);
+    border-radius: 999px;
+    padding: 12px 28px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: var(--fw-600);
+    font-size: var(--fs-300);
+    color: var(--clr-rose-900);
+    white-space: nowrap;
+    transition: all var(--transition-fast);
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+.add-to-cart-btn:hover {
+    border-color: var(--clr-primary-red);
+    color: var(--clr-primary-red);
+}
+
+.quantity-control {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translate(-50%, 50%);
+    background: var(--clr-primary-red);
+    color: white;
+    border-radius: 999px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 160px;
+    font-weight: var(--fw-600);
+}
+
+.quantity-control button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border: 1px solid white;
+    border-radius: 50%;
+    color: white;
+    transition: background var(--transition-fast);
+}
+
+.quantity-control button:hover {
+    background: white;
+    color: var(--clr-primary-red);
+}
+
+.product-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.product-category {
+    font-size: var(--fs-300);
+    color: var(--clr-rose-400);
+}
+
+.product-name {
+    font-size: var(--fs-400);
+    font-weight: var(--fw-600);
+}
+
+.product-price {
+    font-size: var(--fs-400);
+    font-weight: var(--fw-600);
+    color: var(--clr-primary-red);
+}

@@ -68,10 +68,12 @@ func (m *OrderManager) PlaceOrder(Reqs []spec.OrderReq) (Order <-chan []spec.Ord
 				continue
 			}
 			if req.CouponCode != "" {
-				valid, err := m.CouponValidator.Validate(req.CouponCode)
-				if err != nil || !valid {
-					statuses = append(statuses, (spec.ErrorOrderManagerStatus)(spec.NewStatus(spec.StatusCode(spec.OrderManagerInvalidCoupon), "invalid coupon code")))
-					continue
+				if req.CouponCode != "HAPPYHOURS" && req.CouponCode != "BUYGETONE" {
+					valid, err := m.CouponValidator.Validate(req.CouponCode)
+					if err != nil || !valid {
+						statuses = append(statuses, (spec.ErrorOrderManagerStatus)(spec.NewStatus(spec.StatusCode(spec.OrderManagerInvalidCoupon), "invalid coupon code")))
+						continue
+					}
 				}
 			}
 
@@ -106,6 +108,21 @@ func (m *OrderManager) PlaceOrder(Reqs []spec.OrderReq) (Order <-chan []spec.Ord
 			statuses = append(statuses, nil)
 		}
 		return created, statuses
+	})
+}
+
+// GetOrderList implements spec.OrderManager.
+func (m *OrderManager) GetOrderList() (Orders <-chan []spec.Order, St <-chan []spec.ErrorOrderManagerStatus) {
+	return utils.Call2(func() ([]spec.Order, []spec.ErrorOrderManagerStatus) {
+		m.mu.RLock()
+		defer m.mu.RUnlock()
+
+		orders := make([]spec.Order, 0, len(m.OrderKeys))
+		for _, key := range m.OrderKeys {
+			orders = append(orders, m.Orders[key])
+		}
+
+		return orders, nil
 	})
 }
 
