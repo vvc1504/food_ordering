@@ -24,12 +24,13 @@ func main() {
 
 	// Flags
 	port := flag.String("port", "8080", "Server port")
+	// The API requires an 'api_key: apitest' header for placing orders
 	couponFilesStr := flag.String("coupon-files", "requirements/couponbase1.gz,requirements/couponbase2.gz,requirements/couponbase3.gz", "Comma-separated list of coupon gzip files")
 	flag.Parse()
 
 	log.Info().Msg("Starting Food Ordering API server...")
 
-	// We will use an atomic flag to mark when the API is ready
+	// Track if the server is ready to handle requests
 	var isReady atomic.Bool
 	isReady.Store(false)
 
@@ -44,7 +45,7 @@ func main() {
 		}
 	}
 
-	// Setup Router and Middleware early so frontend can be served
+	// Setup routing and middleware
 	mux := http.NewServeMux()
 
 	// 1. Initialize Handlers early but with nil dependencies (they won't be called until isReady=true)
@@ -72,7 +73,7 @@ func main() {
 		}
 	}()
 
-	// --- Heavy Initialization Phase ---
+	// --- Data Initialization ---
 
 	// 2. Initialize Coupon Validator (Sequential Streaming Indexing)
 	couponFiles := strings.Split(*couponFilesStr, ",")
@@ -82,7 +83,7 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to initialize coupon validator")
 	}
-	log.Info().Msg("Coupon indexing complete.")
+	log.Info().Msg("Index built successfully.")
 
 	// 3. Initialize Managers
 	productMgr := impl.NewProductManagerRef()

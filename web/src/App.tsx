@@ -47,9 +47,9 @@ function App() {
           {loading && <p>Loading menu...</p>}
           {isIndexing && (
             <div className="indexing-box">
-              <h3>🚀 Server is Initializing</h3>
-              <p>We are currently indexing thousands of coupons so you can get the best deals.</p>
-              <p>This may take a few minutes. This page will automatically refresh when ready!</p>
+              <h3>Syncing Data</h3>
+              <p>We are currently setting up the menu and special offers.</p>
+              <p>This should only take a moment. The page will refresh automatically!</p>
               <div className="spinner"></div>
             </div>
           )}

@@ -18,7 +18,7 @@ func NewProductManagerRef() (Ref spec.ProductManager) {
 	}
 }
 
-// productManager implements the spec.ProductManager interface.
+// ProductManager handles product data and availability.
 type ProductManager struct {
 	mu          sync.RWMutex
 	Products    map[string]spec.Product

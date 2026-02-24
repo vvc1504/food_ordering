@@ -99,9 +99,7 @@ func (v *validator) initialize(filePaths []string) error {
 		}
 	}
 
-	// Cleanup intermediate maps to save memory
-	// Note: We keep validCoupons which is what we need for validation.
-	// seenInFile1 and seenInFile2 will be GC'd after this function returns.
+	// Keep the validated set and let temporary maps be GC'd
 
 	return nil
 }

@@ -1,87 +1,109 @@
-# Shopping Cart
+# Food Ordering Platform
 
-Build a mini food ordering web app featuring product listing and a functional shopping cart.\
-Prioritize correctness in functionality while getting it to look as close to the design as possible.
+This repository contains a full-stack food ordering application with a Go backend and a React frontend. The project implements a robust API server based on the OpenAPI 3.1 specification and a high-performance coupon validation engine.
 
-For this task you will need to integrate to our demo e-commerce API for listing products and placing orders.
+## 🚀 Key Features
 
-**API Reference**
+- **Full-Stack Implementation**: Modern React frontend and high-performance Go backend.
+- **Clean Architecture**: Organized into logical layers separating API handlers, business logic, and data.
+- **Fast Coupon Lookup**: Custom validation engine that streams and indexes ~2GB of compressed coupon data with low memory usage.
+- **Flexible Data Model**: Implementation follows a robust manager pattern with non-blocking async logic.
+- **Bonus Discounts**:
+  - `HAPPYHOURS`: Applies an 18% discount to the order total.
+  - `BUYGETONE`: Gives the lowest-priced item for free (for every 2 items bought).
+- **Responsive Design**: Mobile-first UI optimized for both 375px and 1440px widths.
+- **Dockerized**: Easy deployment using a multi-stage Docker build.
 
-You can find our [API Documentation](https://orderfoodonline.deno.dev/public/openapi.html) here.
+## 🏗️ Technical Overview
 
-API documentation is based on [OpenAPI3.1](https://swagger.io/specification/v3/) specification.
-You can also find spec file [here](https://orderfoodonline.deno.dev/public/openapi.yaml).
- 
-**Functional Requirements**
+The backend is built with a focus on production-grade extensibility:
+- **Service Managers**: `ProductManager` and `OrderManager` handle the core logic.
+- **Async Pattern**: Operations return results via Go channels for non-blocking communication.
+- **In-Memory Storage**: Fast, thread-safe in-memory maps for products and orders.
+- **Security**: Placing orders requires an `api_key: apitest` header.
 
-- Display products with images
-- Add items to the cart and remove items
-- Show order total correctly
-- Increase or decrease item count in the cart
-- Show order confirmation after placing the order
-- Interactive hover and focus states for elements
+### High-Performance Coupon Validation
+The challenge involved validating millions of coupons across three large `.gz` files:
+1. **Streaming**: Files are read directly via `gzip` streams, never touching the disk as uncompressed data.
+2. **Logic**: A coupon is valid only if it appears in at least two of the source files.
+3. **Efficiency**: Temporary indexing maps are cleared immediately after the final valid set is built, keeping memory footprint low.
 
-**Bonus Goals**
+---
 
-- Allow users to enter a discount code (above the "Confirm Order" button)
-- Discount code `HAPPYHOURS` applies 18% discount to the order total
-- Discount code `BUYGETONE` gives the lowest priced item for free
-- Responsive design based on device's screen size
+## 🛠️ Getting Started (All Platforms)
 
-**Are You a Full Stack Developer??**
+### Option 1: Docker (Recommended - Linux, macOS, Windows)
+The easiest way to run the entire stack without installing local dependencies.
 
-Impress us by implementing your own version of the API based on the OpenAPI specification.\
-Choose any language or framework of your choice. For example our top pick for backend is [Go](https://go.dev)
+1.  **Build and Run**:
+    ```bash
+    docker-compose up --build
+    ```
+2.  **Access**:
+    The application will be available at `http://localhost:8080`.
 
-> The API immplementation example available to you at orderfoodonline.deno.dev/api is simplified and doesn't handle some edge cases intentionally.
-> Use your best judgement to build a Robust API server.
+> [!NOTE]
+> The Docker container is standalone. If you wish to use different coupon files, you can swap the files in the `./requirements` folder and restart the container.
 
-## Design
+---
 
-You can find a [Figma](https://figma.com) design file `design.fig` that you can use.
-You might have to use your best judgement for some mobile layout designs and spacing.
+### Option 2: Local Development
+If you prefer to run the components separately on your host machine.
 
-### Style Guide
+#### Prerequisites
+- [Go 1.25+](https://go.dev/)
+- [Node.js & npm](https://nodejs.org/)
 
-The designs were created to the following widths:
+#### 1. Build the Frontend
+```bash
+cd web
+npm install
+npm run build
+```
+This will generate the `dist/` folder that the backend will serve.
 
-- Mobile: 375px
-- Desktop: 1440px
+#### 2. Run the Backend
+From the root directory:
+```bash
+go run cmd/server/main.go [flags]
+```
 
-> 💡 These are just the design sizes. Ensure content is responsive and meets WCAG requirements by testing the full range of screen sizes from 320px to large screens.
+**Common Flags:**
+- `-port`: The port the server will listen on (default: `8080`).
+- `-coupon-files`: Comma-separated list of paths to your `.gz` coupon files (default: `requirements/couponbase1.gz,requirements/couponbase2.gz,requirements/couponbase3.gz`).
 
-**Typography**
+**Example for different OS paths:**
+- **Windows**: `go run cmd/server/main.go -port 9000 -coupon-files "C:\coupons\file1.gz,C:\coupons\file2.gz"`
+- **Linux/macOS**: `go run cmd/server/main.go -port 8080 -coupon-files "/tmp/coupons/1.gz,/tmp/coupons/2.gz"`
 
-- Font size (product names): 16px
+---
 
-### Font
+## 🔌 API Reference
+The API documentation is based on OpenAPI 3.1.
+- **UI Documentation**: [API Docs](https://orderfoodonline.deno.dev/public/openapi.html)
+- **Spec File**: `api/openapi.yaml`
 
-- Family: [Red Hat Text](https://fonts.google.com/specimen/Red+Hat+Text)
-- Weights: 400, 600, 700
+### Key Endpoints
+- `GET /product`: List all products.
+- `POST /order`: Place an order (**Header** `api_key: apitest` required).
 
-## Getting Started
+#### Example Order Request
+```json
+{
+  "items": [
+    { "productId": "1", "quantity": 2 }
+  ],
+  "couponCode": "HAPPYHOURS"
+}
+```
 
-Feel free to use any tool or workflow ou are comformtable with.\
-Here is an example workflow (you can use it as a reference or use your own workflow)
+## 🎨 Design Reference
+- **Figma Design**: `design.fig`
+- **Typography**: [Red Hat Text](https://fonts.google.com/specimen/Red+Hat+Text)
+- **Colors**: HSL-based palette defined in `web/src/index.css`.
 
-1. Create a new public repository on [GitHub](https://github.com) (alternatively you can use GitLab, BitBucket or Git server of your choice).
-   If you are creating your repository on GitHub, you can chose to use this repository as a starting template. (Click on Use template button at the top)
-2. Look through the deisngs to plan your project. This will help you design UI libraries or tools.
-3. Create a [Vite](https://vite.dev) app to bootstrap a modern front-end project (alternatively use the framework of your choice).
-4. Structure your HTML and preview before theming and adding interactive functionality.
-5. Test and Iterate to build more features
-6. Deploy your app anywhere securely. You may use AWS, Vercel, Deno Deploy, Surge, CloudFlare Pages or some other web app deployment services.
-7. Additionally configure your repository to automatically publish your app on new commit push (CI).
-
-> 💡 **Demo Build Instructions**:
-> A complete, standalone Full Stack executable has been created. To run the bundled React and Go application, simply run the `demo.bat` file or execute the compiled `food_ordering.exe` from the root directory.
-> The server will automatically host the static frontend files on `http://localhost:8080/`.
-_By following these guidelines, you should be able to build a functional and visually appealing mini e-commerce shopping portal that meets the minimum requirements and bonus goals. Good luck! 🚀_
-
-**Resources**
-
-- API documentation: https://orderfoodonline.deno.dev/public/openapi.html
-- API specification: https://orderfoodonline.deno.dev/public/openapi.yaml
-- Figma design file: [design.fig](./design.fig)
-- Red Hat Text font: https://fonts.google.com/specimen/Red+Hat+Text
-
+## 📈 Future Roadmap
+- **Persistence**: Add PostgreSQL/MySQL support.
+- **Caching**: Integrate Redis for rapid product lookups.
+- **Async Processing**: Use Kafka or RabbitMQ for order fulfillment.
+- **Observability**: Add Prometheus metrics and OpenTelemetry tracing.

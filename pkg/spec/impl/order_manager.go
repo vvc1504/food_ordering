@@ -8,7 +8,7 @@ import (
 	"github.com/vvc1504/food_ordering/pkg/spec"
 )
 
-// orderManager implements the spec.OrderManager interface.
+// OrderManager handles the lifecycle of order placement and retrieval.
 type OrderManager struct {
 	mu                 sync.RWMutex
 	ProductManagerRef_ spec.ProductManager
